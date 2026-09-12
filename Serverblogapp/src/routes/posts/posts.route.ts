@@ -25,6 +25,8 @@ router.patch('/:id',
   uploadSingleImage, PostsController.updatePost);
 
 
+
+
 // DELETE
 router.delete('/:id', authenticate, PostsController.deletePost);
 
