@@ -1,6 +1,6 @@
+import 'package:app_ui/pages/create.dart';
 import 'package:app_ui/pages/read.dart';
 import 'package:flutter/material.dart';
-import 'create.dart';
 import 'message.dart';
 import 'profile.dart';
 import 'search.dart';
@@ -21,8 +21,8 @@ class Home extends StatelessWidget {
       barColor: Colors.white,
       items: const [
         NavItem(icon: Icons.home_rounded, page: _HomeContent()),
-        NavItem(icon: Icons.bookmark, page: SearchPage()),
-        NavItem(icon: Icons.menu_book_rounded, page: Readpage()),
+        NavItem(icon: Icons.explore_rounded, page: SearchPage()),
+        NavItem(icon: Icons.menu_book_rounded, page: CreatePage()),
         NavItem(icon: Icons.message_rounded, page: MessagePage()),
         NavItem(icon: Icons.notifications_rounded, page: ProfilePage()),
       ],
@@ -59,27 +59,11 @@ class _HomeContent extends StatelessWidget {
           const SizedBox(width: 8),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CreatePage()),
-            );
-          },
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.edit_outlined, color: Colors.white, size: 24),
-        ),
-      ),
       body: SafeArea(
         child: CustomScrollView(
-          physics: const ClampingScrollPhysics(), // fix stretch overscroll
+          physics: const ClampingScrollPhysics(), 
           slivers: [
-            // Search bar + Jumbotron -> tidak perlu lazy, cukup sekali build
+           
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               sliver: SliverToBoxAdapter(
@@ -94,6 +78,7 @@ class _HomeContent extends StatelessWidget {
                           MaterialPageRoute(builder: (_) => const SearchPage()),
                         );
                       },
+                      
                       child: Container(
                         height: 52,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -124,9 +109,9 @@ class _HomeContent extends StatelessWidget {
               ),
             ),
 
-            // Post list -> lazy, hanya build yang keliatan di layar
+            // Post list 
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
               sliver: const PostSliverList(),
             ),
           ],
@@ -212,6 +197,7 @@ class _JumbotronState extends State<Jumbotron> {
               ),
           ],
         ),
+            const SizedBox(height: 20),
         Align(
           alignment: Alignment.centerLeft,
           child: Column(
@@ -221,8 +207,9 @@ class _JumbotronState extends State<Jumbotron> {
                 "Popular Posts",
                 textAlign: TextAlign.left,
                 style: TextStyle(
+                  fontSize: 18,
                   fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
               ),
@@ -358,15 +345,6 @@ class _PostSliverListState extends State<PostSliverList> {
                 color: Colors.black.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                post.category ?? 'SASTRA',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
             ),
           ),
 
@@ -388,17 +366,47 @@ class _PostSliverListState extends State<PostSliverList> {
             bottom: 12,
             left: 14,
             right: 14,
-            child: Text(
-              post.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                height: 1.3,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (post.author != null)
+                  Text(
+                    '@${post.author!.username}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                if (post.author != null) const SizedBox(height: 3),
+                Text(
+                  post.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  post.content,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.white,
+                    fontSize: 13,
+                    height: 1.25,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
