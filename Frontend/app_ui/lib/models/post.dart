@@ -35,6 +35,8 @@ class Post {
     );
   }
 
+  String? get category => null;
+
   static DateTime? _parseDate(Object? value) {
     return value is String ? DateTime.tryParse(value) : null;
   }
