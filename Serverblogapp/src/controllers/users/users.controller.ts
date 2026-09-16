@@ -63,6 +63,8 @@ export class UsersController {
   };
 
   // Get all posts by user ID
+
+  
   getPostByUser = async (req: Request, res: Response) => {
     try {
       const validateParams = userIdSchema.parse(req.params);
