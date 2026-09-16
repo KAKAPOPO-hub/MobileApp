@@ -1,10 +1,41 @@
 import { Request, Response } from "express";
+import { AuthRequest } from "../../middleware/auth.middleware";
 import { userIdSchema, userPostParamsSchema } from "../../validations/post.validations";
 import {db}from "../../config/db";
 import { postsTable, usersTable } from "../../config/schema";
 import { and, desc, eq } from "drizzle-orm";
 
 export class UsersController {
+  getMyPosts = async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "User belum terautentikasi",
+        });
+      }
+
+      const posts = await db
+        .select()
+        .from(postsTable)
+        .where(eq(postsTable.userId, userId))
+        .orderBy(desc(postsTable.createdAt));
+
+      return res.status(200).json({
+        success: true,
+        message: "User posts retrieved successfully",
+        data: { posts },
+      });
+    } catch (error) {
+      console.error("Get my posts error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
+    }
+  };
+
   getUsers = async (_req: Request, res: Response) => {
     try {
       const users = await db

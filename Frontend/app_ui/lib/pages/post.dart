@@ -12,13 +12,29 @@ class PostAuthor {
   }
 }
 
+class PostCategory {
+  const PostCategory({required this.id, required this.name});
+
+  final int id;
+  final String name;
+
+  factory PostCategory.fromJson(Map<String, dynamic> json) {
+    return PostCategory(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String,
+    );
+  }
+}
+
 class Post {
   const Post({
     required this.id,
     required this.userId,
     required this.title,
     required this.content,
+    this.categoryId,
     this.author,
+    this.category,
     this.imageUrl,
     this.imagePublicId,
     this.status,
@@ -30,7 +46,9 @@ class Post {
   final int userId;
   final String title;
   final String content;
+  final int? categoryId;
   final PostAuthor? author;
+  final PostCategory? category;
   final String? imageUrl;
   final String? imagePublicId;
   final String? status;
@@ -43,9 +61,13 @@ class Post {
       userId: json['userId'] as int,
       title: json['title'] as String,
       content: json['content'] as String,
+      categoryId: json['categoryId'] as int?,
         author: json['author'] is Map<String, dynamic>
           ? PostAuthor.fromJson(json['author'] as Map<String, dynamic>)
           : null,
+          category: json['category'] is Map<String, dynamic>
+            ? PostCategory.fromJson(json['category'] as Map<String, dynamic>)
+            : null,
       imageUrl: json['imageUrl'] as String?,
       imagePublicId: json['imagePublicId'] as String?,
       status: json['status'] as String?,
@@ -53,8 +75,6 @@ class Post {
       updatedAt: _parseDate(json['updatedAt']),
     );
   }
-
-  String? get category => null;
 
   static DateTime? _parseDate(Object? value) {
     return value is String ? DateTime.tryParse(value) : null;

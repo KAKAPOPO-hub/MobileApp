@@ -7,8 +7,8 @@ import {
   updatePostSchema 
 } from "../../validations/post.validations";
 import { db } from "../../config/db";
-import { postsTable, usersTable } from "../../config/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { categoriesTable, postsTable, usersTable } from "../../config/schema";
+import { and, desc, eq, like, or } from "drizzle-orm";
 import { 
   uploadToCloudinary, 
   deleteFromCloudinary 
@@ -21,7 +21,7 @@ export class PostsController {
         try {
             // 1. validation
             const validatedData = createPostSchema.parse(req.body);
-        const { title, content } = validatedData;
+        const { title, content, categoryId } = validatedData;
         const userId = req.user?.id;
 
         if (!userId) {
@@ -40,7 +40,7 @@ export class PostsController {
                 imagePublicId = uploadResult.public_id;
             }
             // 3. Create New Post
-            const [insertedPost] = await db.insert(postsTable).values({ userId, title, content, imageUrl, imagePublicId, }).$returningId();
+            const [insertedPost] = await db.insert(postsTable).values({ userId, title, content, categoryId, imageUrl, imagePublicId, }).$returningId();
             // 4. Ambil Post yg baru di buat tadi
             const newPost = await db.query.postsTable.findFirst({ where: eq(postsTable.id, insertedPost.id) });
             // 5. Tampilkan dalam API
@@ -85,6 +85,7 @@ export class PostsController {
             userId: postsTable.userId,
             title: postsTable.title,
             content: postsTable.content,
+            categoryId: postsTable.categoryId,
             imageUrl: postsTable.imageUrl,
             imagePublicId: postsTable.imagePublicId,
             status: postsTable.status,
@@ -92,13 +93,27 @@ export class PostsController {
             updatedAt: postsTable.updatedAt,
             authorId: usersTable.id,
             authorUsername: usersTable.username,
+            categoryName: categoriesTable.name,
           })
           .from(postsTable)
           .leftJoin(usersTable, eq(postsTable.userId, usersTable.id))
-          .where(eq(postsTable.status, "published"))
+          .leftJoin(categoriesTable, eq(postsTable.categoryId, categoriesTable.id))
+          .where(and(
+            eq(postsTable.status, "published"),
+            req.query.search
+              ? or(
+                  like(postsTable.title, `%${String(req.query.search)}%`),
+                  like(postsTable.content, `%${String(req.query.search)}%`),
+                  like(usersTable.username, `%${String(req.query.search)}%`),
+                )
+              : undefined,
+            req.query.category && req.query.category !== "All"
+              ? eq(categoriesTable.name, String(req.query.category))
+              : undefined,
+          ))
           .orderBy(desc(postsTable.createdAt));
 
-        const postsWithAuthors = posts.map(({ authorId, authorUsername, ...post }) => ({
+        const postsWithAuthors = posts.map(({ authorId, authorUsername, categoryName, ...post }) => ({
           ...post,
           author: authorId == null || authorUsername == null
             ? null
@@ -106,6 +121,7 @@ export class PostsController {
                 id: authorId,
                 username: authorUsername,
               },
+                  category: categoryName == null ? null : { name: categoryName },
         }));
 
         return res.status(200).json({
@@ -167,7 +183,7 @@ export class PostsController {
     }
     };
 
-    updatePost = async (req: Request, res: Response) => {
+    updatePost = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = updatePostParamsSchema.parse(req.params);
     const body = updatePostSchema.parse(req.body);
@@ -184,7 +200,7 @@ export class PostsController {
       });
     }
 
-    if (existingPost[0].userId !== (req as any).user?.id) {
+    if (existingPost[0].userId !== req.user?.id) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized to update this post",
@@ -237,13 +253,20 @@ export class PostsController {
 
 
 // DELETE
-deletePost = async (req: Request, res: Response) => {
+deletePost = async (req: AuthRequest, res: Response) => {
   try {
-    // 1. VALIDATE POST ID
+    // Validate the id before loading any post data.
     const validatedParams = postIdSchema.parse(req.params);
     const { id } = validatedParams;
+    const userId = req.user?.id;
 
-    // 2. CEK POST
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User belum terautentikasi",
+      });
+    }
+
     const existingPost = await db.query.postsTable.findFirst({
       where: eq(postsTable.id, id),
     });
@@ -255,18 +278,26 @@ deletePost = async (req: Request, res: Response) => {
       });
     }
 
-    // 3. SOFT DELETE
-    await db
-      .update(postsTable)
-      .set({
-        status: "delete",
-        updatedAt: new Date(),
-      })
-      .where(eq(postsTable.id, id));
+    if (existingPost.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Anda hanya dapat menghapus post milik sendiri",
+      });
+    }
+
+    await db.delete(postsTable).where(eq(postsTable.id, id));
+
+    if (existingPost.imagePublicId) {
+      try {
+        await deleteFromCloudinary(existingPost.imagePublicId);
+      } catch (error) {
+        console.error("Cloudinary cleanup error:", error);
+      }
+    }
 
     return res.status(200).json({
       success: true,
-      message: "Post deleted successfully",
+      message: "Post permanently deleted successfully",
     });
   } catch (error: any) {
     console.error("Delete post error:", error);

@@ -9,6 +9,8 @@ export const createPostSchema = z.object({
   content: z
     .string()
     .min(10, "Content minimal 10 karakter"),
+
+  categoryId: z.coerce.number().int().positive().optional(),
 });
 
 export const postIdSchema = z.object({
@@ -40,4 +42,6 @@ export const updatePostSchema = z.object({
     .string()
     .min(10, "Content minimal 10 karakter")
     .optional(),
+
+  categoryId: z.coerce.number().int().positive().nullable().optional(),
 });

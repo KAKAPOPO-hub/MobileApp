@@ -1,17 +1,28 @@
 import 'package:app_ui/pages/create.dart';
-import 'package:app_ui/pages/read.dart';
 import 'package:flutter/material.dart';
+import 'activity.dart';
 import 'message.dart';
+import 'post_detail.dart';
 import 'profile.dart';
 import 'search.dart';
 import '../widgets/app_bottom_nav_bar.dart';
-import 'dart:async';
+import '../widgets/post_card_widget.dart';
+import '../widgets/search_bar_widget.dart';
 
-import '../models/post.dart';
+import 'post.dart';
 import '../services/post_service.dart';
+
+const _primaryColor = Color(0xFF6557E8);
+const _backgroundColor = Colors.white;
+const _inkColor = Color(0xFF20202D);
+const _mutedColor = Color(0xFF77768A);
+
+const _postCardColor = Color(0xFFF4F2FF);
+const _postBorderColor = Color(0xFFE7E4FA);
 
 class Home extends StatelessWidget {
   const Home({super.key, this.initialIndex = 0});
+
   final int initialIndex;
 
   @override
@@ -20,11 +31,26 @@ class Home extends StatelessWidget {
       initialIndex: initialIndex,
       barColor: Colors.white,
       items: const [
-        NavItem(icon: Icons.home_rounded, page: _HomeContent()),
-        NavItem(icon: Icons.explore_rounded, page: SearchPage()),
-        NavItem(icon: Icons.menu_book_rounded, page: CreatePage()),
-        NavItem(icon: Icons.message_rounded, page: MessagePage()),
-        NavItem(icon: Icons.notifications_rounded, page: ProfilePage()),
+        NavItem(
+          icon: Icons.home_rounded,
+          page: _HomeContent(),
+        ),
+        NavItem(
+          icon: Icons.explore_rounded,
+          page: SearchPage(),
+        ),
+        NavItem(
+          icon: Icons.menu_book_rounded,
+          page: CreatePage(),
+        ),
+        NavItem(
+          icon: Icons.message_rounded,
+          page: MessagePage(),
+        ),
+        NavItem(
+          icon: Icons.notifications_rounded,
+          page: ActivityPage(),
+        ),
       ],
     );
   }
@@ -36,82 +62,113 @@ class _HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _backgroundColor,
+
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: _backgroundColor,
+        surfaceTintColor: _backgroundColor,
         elevation: 0,
+
         title: const Text(
           'Home',
-          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+            color: _inkColor,
+          ),
         ),
+
         actions: [
           IconButton(
             tooltip: 'Profile',
-            icon: const Icon(Icons.person_rounded),
+            icon: const Icon(
+              Icons.person_rounded,
+            ),
+            iconSize: 21,
+            color: _inkColor,
+
+
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
+                MaterialPageRoute(
+                  builder: (_) => const ProfilePage(),
+                ),
               );
             },
           ),
+
           const SizedBox(width: 8),
         ],
       ),
+
       body: SafeArea(
         child: CustomScrollView(
-          physics: const ClampingScrollPhysics(), 
+          physics: const ClampingScrollPhysics(),
           slivers: [
-           
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                8,
+                20,
+                0,
+              ),
+
               sliver: SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    InkWell(
-                      borderRadius: BorderRadius.circular(14),
+                    SearchBarWidget(
+                      hintText: 'Cari post',
+                      readOnly: true,
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const SearchPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const SearchPage(),
+                          ),
                         );
                       },
-                      
-                      child: Container(
-                        height: 52,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.grey.shade600),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Cari post',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ],
-                        ),
+                    ),
+
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Featured',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: _inkColor,
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 12),
                     const Jumbotron(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Popular Posts',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: _inkColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),
             ),
 
-            // Post list 
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                0,
+                20,
+                110,
+              ),
+
               sliver: const PostSliverList(),
             ),
           ],
@@ -121,179 +178,242 @@ class _HomeContent extends StatelessWidget {
   }
 }
 
-class Jumbotron extends StatefulWidget {
+
+class Jumbotron extends StatelessWidget {
   const Jumbotron({super.key});
 
   @override
-  State<Jumbotron> createState() => _JumbotronState();
-}
-
-class _JumbotronState extends State<Jumbotron> {
-  final PageController _pageController = PageController();
-  Timer? _timer;
-  int _currentPage = 0;
-
-  final List<String> _slides = [
-    'assets/image/carousel1.jpg',
-    'assets/image/carousel 2.jpg',
-    'assets/image/carousel 3.jpg',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!_pageController.hasClients) return;
-      final nextPage = (_currentPage + 1) % _slides.length;
-      _pageController.animateToPage(
-        nextPage,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        AspectRatio(
-          aspectRatio: 1.55,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _slides.length,
-              onPageChanged: (page) => setState(() => _currentPage = page),
-              itemBuilder: (context, index) {
-                return Image.asset(_slides[index], fit: BoxFit.cover);
-              },
-            ),
+    return Container(
+      height: 150,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        image: const DecorationImage(
+          image: AssetImage('assets/image/carousel1.jpg'),
+          fit: BoxFit.cover,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryColor.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (var index = 0; index < _slides.length; index++)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _currentPage == index ? 24 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: _currentPage == index
-                      ? Colors.deepPurple
-                      : Colors.deepPurple.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-          ],
-        ),
-            const SizedBox(height: 20),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Popular Posts",
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
+        ],
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Colors.black.withValues(alpha: 0.35),
+              Colors.black.withValues(alpha: 0.08),
             ],
           ),
         ),
-      ],
+        child: const Align(
+          alignment: Alignment.bottomLeft,
+          child: Text(
+            'Baca cerita baru hari ini',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
-/// Sliver lazy-list buat post, lengkap dengan separator antar item.
 class PostSliverList extends StatefulWidget {
   const PostSliverList({super.key});
 
   @override
-  State<PostSliverList> createState() => _PostSliverListState();
+  State<PostSliverList> createState() =>
+      _PostSliverListState();
 }
 
-class _PostSliverListState extends State<PostSliverList> {
+class _PostSliverListState
+    extends State<PostSliverList> {
   late Future<List<Post>> _postsFuture;
 
   @override
   void initState() {
     super.initState();
-    _postsFuture = const PostService().getPosts();
+
+    _postsFuture =
+        const PostService().getPosts();
   }
 
   void _reloadPosts() {
-    setState(() => _postsFuture = const PostService().getPosts());
+    setState(() {
+      _postsFuture =
+          const PostService().getPosts();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Post>>(
       future: _postsFuture,
+
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+
+        if (snapshot.connectionState ==
+            ConnectionState.waiting) {
           return const SliverToBoxAdapter(
-            child: Center(child: CircularProgressIndicator()),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 32,
+              ),
+
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: _primaryColor,
+                  strokeWidth: 2.5,
+                ),
+              ),
+            ),
           );
         }
+
 
         if (snapshot.hasError) {
           return SliverToBoxAdapter(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    snapshot.error.toString(),
-                    style: TextStyle(color: Colors.grey.shade700),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                14,
+                8,
+                14,
+              ),
+
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F7FC),
+
+                borderRadius:
+                    BorderRadius.circular(16),
+
+                border: Border.all(
+                  color: const Color(0xFFEAE8F2),
+                ),
+              ),
+
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.cloud_off_rounded,
+                    color: _primaryColor,
+                    size: 22,
                   ),
-                ),
-                IconButton(
-                  tooltip: 'Coba lagi',
-                  onPressed: _reloadPosts,
-                  icon: const Icon(Icons.refresh),
-                ),
-              ],
+
+                  const SizedBox(width: 12),
+
+                  const Expanded(
+                    child: Text(
+                      'Post belum dapat dimuat. Coba lagi.',
+
+                      style: TextStyle(
+                        color: _inkColor,
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+
+                  IconButton(
+                    tooltip: 'Coba lagi',
+
+                    onPressed: _reloadPosts,
+
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                    ),
+
+                    color: _primaryColor,
+                  ),
+                ],
+              ),
             ),
           );
         }
 
-        final posts = snapshot.data ?? const <Post>[];
+        final posts =
+            snapshot.data ?? const <Post>[];
+
         if (posts.isEmpty) {
           return SliverToBoxAdapter(
-            child: Text(
-              'Belum ada post',
-              style: TextStyle(color: Colors.grey.shade600),
+            child: Container(
+              width: double.infinity,
+
+              padding:
+                  const EdgeInsets.symmetric(
+                vertical: 24,
+              ),
+
+              decoration: BoxDecoration(
+                color: _postCardColor,
+
+                borderRadius:
+                    BorderRadius.circular(16),
+
+                border: Border.all(
+                  color: _postBorderColor,
+                ),
+              ),
+
+              child: const Column(
+                children: [
+                  Icon(
+                    Icons.article_outlined,
+                    color: _primaryColor,
+                    size: 26,
+                  ),
+
+                  SizedBox(height: 8),
+
+                  Text(
+                    'Belum ada post',
+
+                    style: TextStyle(
+                      color: _mutedColor,
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
 
-        // Trik separator di sliver: index genap = card, index ganjil = separator.
+        
+
         return SliverList(
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               if (index.isOdd) {
-                return const SizedBox(height: 20); // ganti Divider() kalau mau garis
+                return const SizedBox(
+                  height: 20,
+                );
               }
+
               final postIndex = index ~/ 2;
-              return _buildPostCard(posts[postIndex]);
+
+              return _buildPostCard(
+                posts[postIndex],
+              );
             },
-            childCount: posts.isEmpty ? 0 : posts.length * 2 - 1,
+
+            childCount:
+                posts.length * 2 - 1,
           ),
         );
       },
@@ -301,116 +421,16 @@ class _PostSliverListState extends State<PostSliverList> {
   }
 
   Widget _buildPostCard(Post post) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        children: [
-          if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
-            Image.network(
-              post.imageUrl!,
-              width: double.infinity,
-              height: 220,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 220,
-                color: Colors.grey.shade800,
-              ),
-            )
-          else
-            Container(height: 220, color: Colors.grey.shade800),
-
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.85),
-                    Colors.black.withOpacity(0.35),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.55, 1.0],
-                ),
-              ),
-            ),
+    return PostCardWidget(
+      post: post,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PostDetailPage(post: post),
           ),
-
-          Positioned(
-            top: 10,
-            left: 10,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-
-          Positioned(
-            top: 10,
-            right: 10,
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.bookmark_border, color: Colors.white, size: 16),
-            ),
-          ),
-
-          Positioned(
-            bottom: 12,
-            left: 14,
-            right: 14,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (post.author != null)
-                  Text(
-                    '@${post.author!.username}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                if (post.author != null) const SizedBox(height: 3),
-                Text(
-                  post.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  post.content,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    color: Colors.white,
-                    fontSize: 13,
-                    height: 1.25,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

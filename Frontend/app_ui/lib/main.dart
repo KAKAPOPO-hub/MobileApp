@@ -7,6 +7,17 @@ void main() {
   runApp(const MyApp());
 }
 
+class _NoStretchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -14,6 +25,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      scrollBehavior: _NoStretchScrollBehavior(),
       initialRoute: '/login',
       routes: {
         '/login': (_) => const LoginPage(),
