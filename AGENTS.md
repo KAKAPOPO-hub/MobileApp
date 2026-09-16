@@ -1,43 +1,71 @@
-# Panduan untuk AI Coding Agents
+# PR.md — Refactoring & Refinement App Architecture
 
-## Gaya Penjelasan
+## 1. Overview & Objective
+Dokumen ini menjadi acuan refactoring besar-besaran untuk menyederhanakan alur kerja aplikasi dan memperjelas pembagian *folder responsibility*:
+* **`Serverblogapp/` (Backend Node.js/TypeScript):** Menjadi pusat **seluruh logika bisnis**, autentikasi, manajemen basis data (Drizzle ORM), validasi data, dan integrasi *cloud storage* (Cloudinary).
+* **`Frontend/` (Flutter `app_ui`):** Berfokus **murni sebagai *presentation layer*** (tampilan visual, pengolahan *state UI*, dan *HTTP client calls* ke Backend).
 
-- Jelaskan konsep secara bertahap: mulai dari intuisi atau analogi sederhana, lalu detail teknis, kemudian contoh kode yang relevan.
-- Gunakan istilah teknis yang tepat, tetapi jelaskan istilah yang mungkin baru bagi pemula.
-- Saat mereview atau memperbaiki kode, jelaskan alasan perubahan, dampak terhadap perilaku, dan trade-off-nya, bukan hanya menunjukkan kesalahan.
-- Prioritaskan pemahaman jangka panjang, clean code, konsep dasar yang kuat, dan solusi yang dapat dirawat.
+---
 
-## Cara Bekerja di Workspace
+## 2. Core Constraints & Guiding Principles
+1. **Pembersihan Frontend:** Hapus semua logika bisnis berat, kueri database, atau validasi kompleks dari folder frontend. Frontend hanya menerima data siap pakai dari REST API backend.
+2. **Backend Minimal Refactor:** Pertahankan struktur controller, route, dan service di `Serverblogapp/` yang sudah ada tanpa melakukan *breaking changes* pada skema basis data utama.
+3. **Penyederhanaan & Komponen Reusable (PENTING):**
+   * Tampilan Flutter dibuat simpel, *clean*, dan konsisten.
+   * **Aturan Reusable Widget:** Jika ada elemen UI/widget yang digunakan lebih dari 1 halaman (contoh: Search Bar di halaman `home.dart` dan `search.dart`, atau `FieldInput`), **WAJIB dibuatkan file tersendiri di dalam folder `lib/widgets/`**. Jangan buat ulang kodingan UI yang sama (*code duplication*).
 
-- Baca implementasi, pemanggil, dan test terdekat sebelum mengubah kode. Ikuti pola lokal yang sudah ada dan hindari refactor yang tidak diperlukan.
-- Pisahkan tanggung jawab sesuai struktur proyek: Flutter screens berada di `Frontend/app_ui/lib/pages`, widget bersama di `lib/widgets`, API/session di `lib/services`, dan model di `lib/models`.
-- Pada server, route hanya memasang endpoint; controller menangani request dan operasi data; middleware menangani auth/upload; validasi berada di `src/validations`; database dan schema berada di `src/config`.
-- Pertimbangkan edge case, error jaringan, input tidak valid, status HTTP, lifecycle/session, dan perbedaan platform Flutter sebelum menyimpulkan perubahan sudah selesai.
-- Jangan menganggap konfigurasi lokal, database, Cloudinary, atau file `.env` tersedia. Jangan menambahkan secret ke repository.
+---
 
-## Verifikasi
+## 3. Component & Structure Rules (`lib/widgets/`)
 
-Jalankan pemeriksaan yang paling sempit setelah perubahan, lalu pemeriksaan yang relevan secara keseluruhan:
+Setiap elemen UI yang muncul berulang kali di berbagai halaman harus diekstrak menjadi komponen independen:
 
-```powershell
-Push-Location Frontend/app_ui
-flutter analyze
-flutter test
-Pop-Location
+| Nama Widget | Dipakai di Halaman | Fungsi / Keterangan |
+| :--- | :--- | :--- |
+| **`search_bar_widget.dart`** | `home.dart`, `search.dart` | Input pencarian postingan universal |
+| **`app_bottom_nav_bar.dart`** | Navigation bar utama | Navigasi antar halaman utama |
+| **`field_input.dart`** | `login.dart`, `regis.dart`, `create.dart`, `edit_post.dart` | Field input teks standar aplikasi |
+| **`post_card_widget.dart`** | `home.dart`, `read.dart`, `profile.dart` | Card preview postingan |
 
-Push-Location Serverblogapp
-npx tsc --noEmit
-npm test
-Pop-Location
-```
+---
 
-- Gunakan `flutter run` untuk menjalankan client dan `npm run dev` untuk menjalankan server saat pemeriksaan manual diperlukan.
-- `flutter test` saat ini berisi test template yang tidak mencerminkan aplikasi login/register; jangan menganggap kegagalannya sebagai regresi tanpa memeriksa test tersebut.
-- `npm test` saat ini adalah placeholder yang sengaja keluar dengan error; gunakan `npx tsc --noEmit` sebagai pemeriksaan TypeScript sampai test server tersedia.
-- URL API Flutter menggunakan `10.0.2.2:5000` untuk Android emulator. Periksa konfigurasi platform sebelum mengubahnya untuk web, iOS, atau perangkat fisik.
+## 4. Scope & Feature Requirements
 
-## Referensi Utama
+### A. Autentikasi (`/auth`)
+* **Register & Login:** User dapat mendaftar dan masuk melalui `regis.dart` dan `login.dart`.
+* **Session:** Pengelolaan JWT token disimpan di `auth_session.dart`.
 
-- Setup Flutter dan dependency: [Frontend/app_ui/README.md](Frontend/app_ui/README.md) dan [Frontend/app_ui/pubspec.yaml](Frontend/app_ui/pubspec.yaml)
-- Entry point dan pemasangan route server: [Serverblogapp/src/index.ts](Serverblogapp/src/index.ts)
-- Dependency dan script server: [Serverblogapp/package.json](Serverblogapp/package.json)
+### B. Posting Management (Milik Akun Sendiri)
+* **Lihat Detail Posting:** Tampilan detail (`post_detail.dart`) dapat diakses umum atau user terautentikasi.
+* **Bikin Post:** User membuat postingan baru di `create.dart` (unggah gambar via Cloudinary).
+* **Edit Post:** User mengedit postingan milik akunnya sendiri di `edit_post.dart`.
+* **Hapus Post:** User menghapus postingan milik akunnya sendiri dari `profile.dart` atau `post_detail.dart`.
+
+### C. Eksplorasi & Filter
+* **Pencarian (Search):** Mencari postingan menggunakan `search_bar_widget` di `search.dart` / `home.dart`.
+* **Filter Kategori:** Memfilter daftar postingan berdasarkan kategori di `home.dart` / `read.dart`.
+
+---
+
+## 5. API Endpoints Alignment (`Serverblogapp`)
+
+Berikut pemetaan *route* backend yang dipanggil oleh Flutter:
+
+| Fitur | Method | Endpoint | Auth Required | Keterangan |
+| :--- | :--- | :--- | :--- | :--- |
+| **Register** | `POST` | `/api/auth/register` | No | Pendaftaran akun baru |
+| **Login** | `POST` | `/api/auth/login` | No | Mengembalikan JWT Token |
+| **Get All Posts** | `GET` | `/api/posts?search=&category=` | No | Daftar postingan + search & filter |
+| **Get Post Detail** | `GET` | `/api/posts/:id` | No | Detail postingan berdasarkan ID |
+| **Get My Posts** | `GET` | `/api/posts/me` | **Yes** | Postingan khusus milik user login |
+| **Create Post** | `POST` | `/api/posts` | **Yes** | Menambah postingan baru |
+| **Update Post** | `PUT` | `/api/posts/:id` | **Yes** | Mengedit postingan milik sendiri |
+| **Delete Post** | `DELETE` | `/api/posts/:id` | **Yes** | Menghapus postingan milik sendiri |
+
+---
+
+## 6. Definition of Done (DoD)
+* [ ] Komponen UI yang dipakai di >1 halaman sudah dipisah ke folder `lib/widgets/`.
+* [ ] Tidak ada duplikasi kode tampilan untuk komponen yang sama (seperti Search Bar).
+* [ ] CRUD postingan berjalan lancar dan terintegrasi penuh antara Flutter dan Backend Node.js.
+* [ ] User hanya dapat mengedit dan menghapus postingan milik akun sendiri (ownership terverifikasi di backend).

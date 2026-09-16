@@ -16,11 +16,17 @@ export const usersTable = mysqlTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+export const categoriesTable = mysqlTable("categories", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 // POSTS
 export const postsTable = mysqlTable("posts", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  categoryId: int("category_id").references(() => categoriesTable.id, { onDelete: "set null" }),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
   imageUrl: text("image_url"), // Kolom untuk simpan URL gambar

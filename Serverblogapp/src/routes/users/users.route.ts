@@ -8,6 +8,7 @@ const router = Router();
 router.get('/', authenticate, UsersController.getUsers);
 
 // User : Get all data(posts)
+router.get('/me/posts', authenticate, UsersController.getMyPosts);
 router.get('/:userId', authenticate, UsersController.getPostsByUserId);
 
 // User : Get data by Id

@@ -37,6 +37,9 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         final responseData = data['data'] as Map<String, dynamic>;
         AuthSession.token = responseData['token']?.toString();
+        final user = responseData['user'] as Map<String, dynamic>?;
+        AuthSession.userId = user?['id'] as int?;
+        AuthSession.username = user?['username']?.toString();
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Login berhasil. ')));
@@ -60,7 +63,9 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+      ),
       body: Container(
         decoration: const BoxDecoration(color: Colors.white),
         child: Form(

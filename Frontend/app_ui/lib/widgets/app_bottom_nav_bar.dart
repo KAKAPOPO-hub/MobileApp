@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 
-/// Model sederhana untuk mendefinisikan satu item navigasi.
 class NavItem {
   final IconData icon;
   final IconData? selectedIcon;
@@ -10,18 +9,6 @@ class NavItem {
   const NavItem({required this.icon, this.selectedIcon, required this.page});
 }
 
-/// Widget reusable: floating bottom navigation bar (gaya pill/card)
-/// + body yang otomatis ganti sesuai tab yang dipilih.
-///
-/// Cukup panggil:
-/// ```dart
-/// AppBottomNavBar(
-///   items: [
-///     NavItem(icon: Icons.home_rounded, page: const HomeTab()),
-///     NavItem(icon: Icons.search, page: const SearchTab()),
-///   ],
-/// )
-/// ```
 class AppBottomNavBar extends StatefulWidget {
   const AppBottomNavBar({
     super.key,
@@ -36,7 +23,6 @@ class AppBottomNavBar extends StatefulWidget {
   final List<NavItem> items;
   final int initialIndex;
 
-  /// Lebar maksimum bar (biar tetap rapi di layar lebar/tablet).
   final double maxWidth;
 
   final Color barColor;
@@ -72,10 +58,9 @@ class _AppBottomNavBarState extends State<AppBottomNavBar> {
           maxWidth: widget.maxWidth,
           offset: 12,
           alignment: Alignment.bottomCenter,
-          fit: StackFit.expand,
+          fit: StackFit.loose,
         ),
 
-        // Body otomatis ganti sesuai tab aktif.
         body: BottomBarBodyPadding(
           child: IndexedStack(
             index: _currentIndex,
@@ -83,7 +68,6 @@ class _AppBottomNavBarState extends State<AppBottomNavBar> {
           ),
         ),
 
-        // Kartu bar mengambang.
         child: Container(
           height: 70,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

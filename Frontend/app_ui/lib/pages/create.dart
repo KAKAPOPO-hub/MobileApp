@@ -13,11 +13,19 @@ class CreatePage extends StatefulWidget {
 }
 
 class _CreatePageState extends State<CreatePage> {
+  static const _categories = <DropdownMenuItem<int>>[
+    DropdownMenuItem(value: 1, child: Text('Puisi')),
+    DropdownMenuItem(value: 2, child: Text('Pantun')),
+    DropdownMenuItem(value: 3, child: Text('Sajak')),
+    DropdownMenuItem(value: 4, child: Text('Cerpen')),
+  ];
+
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _postService = const PostService();
   final _imagePicker = ImagePicker();
   File? _coverImage;
+  int? _categoryId;
   bool _isSubmitting = false;
 
   bool get _hasText =>
@@ -58,13 +66,19 @@ class _CreatePageState extends State<CreatePage> {
       await _postService.createPost(
         title: title,
         content: content,
+        categoryId: _categoryId,
         coverImage: _coverImage,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Post berhasil dikirim')),
       );
-      Navigator.of(context).pop(true);
+      _titleController.clear();
+      _contentController.clear();
+      setState(() {
+        _coverImage = null;
+        _categoryId = null;
+      });
     } on PostServiceException catch (error) {
       if (mounted) _showMessage(error.message);
     } catch (_) {
@@ -201,6 +215,13 @@ class _CreatePageState extends State<CreatePage> {
                 focusedBorder: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<int>(
+              initialValue: _categoryId,
+              decoration: const InputDecoration(labelText: 'Kategori'),
+              items: _categories,
+              onChanged: (value) => setState(() => _categoryId = value),
             ),
             const SizedBox(height: 12),
             Expanded(
