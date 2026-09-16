@@ -73,9 +73,7 @@ export class PostsController {
         }
     };
 
-    //READ
-    //GUEST
-    // GUEST
+  
 
     getPosts = async (req: Request, res: Response) => {
     try {
