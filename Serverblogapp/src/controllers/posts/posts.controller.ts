@@ -7,7 +7,7 @@ import {
   updatePostSchema 
 } from "../../validations/post.validations";
 import { db } from "../../config/db";
-import { postsTable } from "../../config/schema";
+import { postsTable, usersTable } from "../../config/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { 
   uploadToCloudinary, 
@@ -27,7 +27,7 @@ export class PostsController {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            message: "User belum terautentikasi",
+            message: "User belum terautentikasii",
           });
         }
 
@@ -79,13 +79,40 @@ export class PostsController {
 
     getPosts = async (req: Request, res: Response) => {
     try {
-        const posts = await db.select().from(postsTable).where(eq(postsTable.status, "published")).orderBy(desc(postsTable.createdAt));
+        const posts = await db
+          .select({
+            id: postsTable.id,
+            userId: postsTable.userId,
+            title: postsTable.title,
+            content: postsTable.content,
+            imageUrl: postsTable.imageUrl,
+            imagePublicId: postsTable.imagePublicId,
+            status: postsTable.status,
+            createdAt: postsTable.createdAt,
+            updatedAt: postsTable.updatedAt,
+            authorId: usersTable.id,
+            authorUsername: usersTable.username,
+          })
+          .from(postsTable)
+          .leftJoin(usersTable, eq(postsTable.userId, usersTable.id))
+          .where(eq(postsTable.status, "published"))
+          .orderBy(desc(postsTable.createdAt));
+
+        const postsWithAuthors = posts.map(({ authorId, authorUsername, ...post }) => ({
+          ...post,
+          author: authorId == null || authorUsername == null
+            ? null
+            : {
+                id: authorId,
+                username: authorUsername,
+              },
+        }));
 
         return res.status(200).json({
         success: true,
         message: "Get Posts Successfully",
         data: {
-            posts: posts
+            posts: postsWithAuthors
         }
         });
     } catch (error) {
