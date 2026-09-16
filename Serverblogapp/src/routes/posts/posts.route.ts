@@ -18,8 +18,8 @@ router.get("/", PostsController.getPosts);
 router.get("/:id", PostsController.getPostById);
 
 
-//UPDATE
-// UPDATE
+
+
 router.patch('/:id',
   authenticate,
   uploadSingleImage, PostsController.updatePost);
